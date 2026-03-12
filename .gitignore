@@ -33,5 +33,5 @@ stitch/
 uv.lock
 HomeWork.txt
 test_main.http
-main.py
+/main.py
 pyproject.toml
