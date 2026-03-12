@@ -26,6 +26,9 @@ RUN pip install --no-cache-dir --no-deps deepchem==2.8.0 && \
 
 COPY backend/app/ app/
 
+# Verify the module is importable at build time
+RUN python -c "from app.main import app; print('Import OK')"
+
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
