@@ -1,10 +1,26 @@
 import logging
+import os
+import sys
 import threading
 from typing import Optional
 
 import numpy as np
+from rdkit import RDLogger
+from rdkit.Chem import rdFingerprintGenerator
 
 logger = logging.getLogger(__name__)
+
+# Suppress RDKit C++ deprecation/valence warnings
+RDLogger.DisableLog("rdApp.*")
+
+# Pre-import deepchem with its noisy optional-dependency warnings silenced
+_stderr = sys.stderr
+sys.stderr = open(os.devnull, "w")
+try:
+    import deepchem as dc
+finally:
+    sys.stderr.close()
+    sys.stderr = _stderr
 
 _esol_model = None
 _esol_transformers = None
@@ -15,12 +31,37 @@ _tox21_transformers = None
 _esol_lock = threading.Lock()
 _tox21_lock = threading.Lock()
 
+_morgan_gen = rdFingerprintGenerator.GetMorganGenerator(radius=2, fpSize=1024)
 
-def _ecfp_featurizer():
-    """Return a fixed-size CircularFingerprint so all molecules produce uniform arrays."""
+
+def _featurize_smiles(smiles_list: list[str]) -> np.ndarray:
+    """Featurize SMILES using MorganGenerator (no deprecation warnings)."""
+    from rdkit import Chem
+
+    fps = []
+    for smi in smiles_list:
+        mol = Chem.MolFromSmiles(smi)
+        if mol is not None:
+            fps.append(_morgan_gen.GetFingerprintAsNumPy(mol))
+        else:
+            fps.append(np.zeros(1024, dtype=np.uint8))
+    return np.array(fps, dtype=np.float64)
+
+
+def _dc_morgan_featurizer():
+    """Return a DeepChem-compatible featurizer using MorganGenerator."""
     import deepchem as dc
 
-    return dc.feat.CircularFingerprint(size=1024)
+    class _MorganFP(dc.feat.MolecularFeaturizer):
+        def __init__(self):
+            self.gen = rdFingerprintGenerator.GetMorganGenerator(
+                radius=2, fpSize=1024
+            )
+
+        def _featurize(self, mol):
+            return self.gen.GetFingerprintAsNumPy(mol).astype(np.float64)
+
+    return _MorganFP()
 
 
 def _get_esol_model():
@@ -32,7 +73,12 @@ def _get_esol_model():
             return _esol_model, _esol_transformers
         import deepchem as dc
 
-        featurizer = _ecfp_featurizer()
+        # Suppress DeepChem's own featurization noise for invalid molecules
+        dc_logger = logging.getLogger("deepchem")
+        prev_level = dc_logger.level
+        dc_logger.setLevel(logging.ERROR)
+
+        featurizer = _dc_morgan_featurizer()
         tasks, datasets, transformers = dc.molnet.load_delaney(
             featurizer=featurizer
         )
@@ -47,6 +93,7 @@ def _get_esol_model():
         model.fit(train, nb_epoch=50)
         _esol_model = model
         _esol_transformers = transformers
+        dc_logger.setLevel(prev_level)
         logger.info("ESOL model trained and cached.")
     return _esol_model, _esol_transformers
 
@@ -60,7 +107,11 @@ def _get_tox21_model():
             return _tox21_model, _tox21_tasks, _tox21_transformers
         import deepchem as dc
 
-        featurizer = _ecfp_featurizer()
+        dc_logger = logging.getLogger("deepchem")
+        prev_level = dc_logger.level
+        dc_logger.setLevel(logging.ERROR)
+
+        featurizer = _dc_morgan_featurizer()
         tasks, datasets, transformers = dc.molnet.load_tox21(
             featurizer=featurizer, save_dir="/tmp/deepchem_data"
         )
@@ -75,9 +126,9 @@ def _get_tox21_model():
         _tox21_model = model
         _tox21_tasks = tasks
         _tox21_transformers = transformers
+        dc_logger.setLevel(prev_level)
         logger.info("Tox21 model trained and cached.")
     return _tox21_model, _tox21_tasks, _tox21_transformers
-
 
 
 def predict_solubility(smiles_list: list[str]) -> list[Optional[float]]:
@@ -85,8 +136,7 @@ def predict_solubility(smiles_list: list[str]) -> list[Optional[float]]:
     import deepchem as dc
 
     model, transformers = _get_esol_model()
-    featurizer = dc.feat.CircularFingerprint(size=1024)
-    features = featurizer.featurize(smiles_list)
+    features = _featurize_smiles(smiles_list)
     dataset = dc.data.NumpyDataset(X=features)
     predictions = model.predict(dataset)
     for t in reversed(transformers):
@@ -101,8 +151,7 @@ def predict_toxicity(smiles_list: list[str]) -> list[Optional[dict[str, float]]]
     import deepchem as dc
 
     model, tasks, transformers = _get_tox21_model()
-    featurizer = dc.feat.CircularFingerprint(size=1024)
-    features = featurizer.featurize(smiles_list)
+    features = _featurize_smiles(smiles_list)
     n_samples = features.shape[0]
     dummy_y = np.zeros((n_samples, len(tasks)))
     dataset = dc.data.NumpyDataset(X=features, y=dummy_y)
