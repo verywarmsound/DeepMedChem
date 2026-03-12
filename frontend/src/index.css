@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #0a47c2;
+  --color-background-light: #f5f6f8;
+  --color-background-dark: #101622;
+  --font-family-display: "Space Grotesk", sans-serif;
+  --radius: 0.25rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+}
+
+@layer base {
+  body {
+    font-family: "Space Grotesk", sans-serif;
+    margin: 0;
+  }
+}
+
+.mol-gradient {
+  background:
+    radial-gradient(circle at top right, rgba(10, 71, 194, 0.15), transparent),
+    radial-gradient(circle at bottom left, rgba(10, 71, 194, 0.05), transparent);
+}

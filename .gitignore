@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+*.egg
+dist/
+
+# Node
+node_modules/
+frontend/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# DeepChem data cache
+/tmp/deepchem_data/
+
+# Misc
+stitch/
+uv.lock
+HomeWork.txt
+test_main.http
+main.py
+pyproject.toml
