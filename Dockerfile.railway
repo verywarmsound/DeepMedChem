@@ -6,12 +6,23 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# Install CPU-only PyTorch first to avoid pulling ~2GB of CUDA libs
-RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
-
 COPY backend/requirements.txt .
-# Install remaining deps (torch already satisfied, won't re-download)
-RUN pip install --no-cache-dir -r requirements.txt
+
+# 1. Install CPU-only torch first from the CPU wheel index
+RUN pip install --no-cache-dir torch==2.4.1+cpu --index-url https://download.pytorch.org/whl/cpu
+
+# 2. Install remaining deps; torch is already satisfied so pip won't re-download
+#    Use --no-deps for deepchem to prevent it pulling CUDA torch, then install
+#    deepchem's other deps separately
+RUN pip install --no-cache-dir --no-deps deepchem==2.8.0 && \
+    pip install --no-cache-dir \
+      "fastapi>=0.115.0" \
+      "uvicorn[standard]>=0.30.0" \
+      "rdkit>=2024.3.0" \
+      "numpy<2" \
+      "pydantic>=2.0" \
+      "pydantic-settings>=2.0" \
+      scikit-learn scipy pandas joblib Pillow
 
 COPY backend/app/ app/
 
