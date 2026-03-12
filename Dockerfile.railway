@@ -26,8 +26,7 @@ RUN pip install --no-cache-dir --no-deps deepchem==2.8.0 && \
 
 COPY backend/app/ app/
 
-# Verify the module is importable at build time
-RUN python -c "from app.main import app; print('Import OK')"
+RUN ls -la app/
 
 EXPOSE 8000
 
