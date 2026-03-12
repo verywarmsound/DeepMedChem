@@ -50,7 +50,6 @@ def _featurize_smiles(smiles_list: list[str]) -> np.ndarray:
 
 def _dc_morgan_featurizer():
     """Return a DeepChem-compatible featurizer using MorganGenerator."""
-    import deepchem as dc
 
     class _MorganFP(dc.feat.MolecularFeaturizer):
         def __init__(self):
@@ -71,7 +70,6 @@ def _get_esol_model():
     with _esol_lock:
         if _esol_model is not None:
             return _esol_model, _esol_transformers
-        import deepchem as dc
 
         # Suppress DeepChem's own featurization noise for invalid molecules
         dc_logger = logging.getLogger("deepchem")
@@ -105,7 +103,6 @@ def _get_tox21_model():
     with _tox21_lock:
         if _tox21_model is not None:
             return _tox21_model, _tox21_tasks, _tox21_transformers
-        import deepchem as dc
 
         dc_logger = logging.getLogger("deepchem")
         prev_level = dc_logger.level
@@ -133,8 +130,6 @@ def _get_tox21_model():
 
 def predict_solubility(smiles_list: list[str]) -> list[Optional[float]]:
     """Predict ESOL log-solubility for a list of SMILES."""
-    import deepchem as dc
-
     model, transformers = _get_esol_model()
     features = _featurize_smiles(smiles_list)
     dataset = dc.data.NumpyDataset(X=features)
@@ -148,8 +143,6 @@ def predict_solubility(smiles_list: list[str]) -> list[Optional[float]]:
 
 def predict_toxicity(smiles_list: list[str]) -> list[Optional[dict[str, float]]]:
     """Predict Tox21 toxicity probabilities for a list of SMILES."""
-    import deepchem as dc
-
     model, tasks, transformers = _get_tox21_model()
     features = _featurize_smiles(smiles_list)
     n_samples = features.shape[0]
