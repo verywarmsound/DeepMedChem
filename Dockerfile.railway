@@ -26,7 +26,16 @@ RUN pip install --no-cache-dir --no-deps deepchem==2.8.0 && \
 
 COPY backend/app/ app/
 
-RUN ls -la app/
+# Verify app package is complete and importable
+RUN ls -la app/ && python <<'PYEOF'
+import traceback
+try:
+    from app.main import app
+    print("Import OK")
+except Exception:
+    traceback.print_exc()
+    exit(1)
+PYEOF
 
 EXPOSE 8000
 
