@@ -24,8 +24,27 @@ executor = ThreadPoolExecutor(max_workers=2)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Pre-warm ML models in background so first request is fast
+    loop = asyncio.get_event_loop()
+    loop.run_in_executor(executor, _warmup_models)
     yield
     executor.shutdown(wait=False)
+
+
+def _warmup_models():
+    from .properties import predict_solubility, predict_toxicity
+
+    logger.info("Pre-warming ML models...")
+    try:
+        predict_solubility(["C"])
+        logger.info("ESOL model ready.")
+    except Exception:
+        logger.warning(f"ESOL warmup failed: {traceback.format_exc()}")
+    try:
+        predict_toxicity(["C"])
+        logger.info("Tox21 model ready.")
+    except Exception:
+        logger.warning(f"Tox21 warmup failed: {traceback.format_exc()}")
 
 
 app = FastAPI(
