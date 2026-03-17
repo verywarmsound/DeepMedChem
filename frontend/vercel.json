@@ -1,5 +1,7 @@
 {
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://backend-production-c17f1.up.railway.app/$1" }
-  ]
+  "build": {
+    "env": {
+      "VITE_API_URL": "https://backend-production-c17f1.up.railway.app"
+    }
+  }
 }
