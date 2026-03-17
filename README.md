@@ -46,6 +46,24 @@ The largest fragment of atoms and bonds that exists in both molecules. The app f
 
 A molecule's SMILES only describes connectivity (which atoms are bonded). In reality, a molecule can adopt many 3D shapes (conformations) due to rotatable bonds. The app generates up to 50 conformers per molecule, optimizes their geometry, and picks the best ones for alignment.
 
+### Note on the Example Results
+
+The alignment and property results shown in the UI depend on the exact example molecules used as input.
+
+During development, I corrected the reference example name from `Ampicillin` to `Penicillin`, because the SMILES provided in the assignment:
+
+`CC1(C)SC2C(NC(=O)Cc3ccccc3)C(=O)N2C1C(=O)O`
+
+does not correspond to ampicillin. RDKit gives this molecule the formula `C16H18N2O4S`, which is consistent with penicillin-type connectivity.
+
+The probe example:
+
+`CC1(C)SC2C(NC(=O)C(N)c3ccc(O)cc3)C(=O)N2C1C(=O)O`
+
+gives the formula `C16H19N3O5S`, which is consistent with amoxicillin.
+
+Because the reference molecule was relabeled according to its actual chemistry, the displayed alignment scores, RMSD values, predicted properties, and fingerprint output should be read as results for a `Penicillin` vs `Amoxicillin` comparison, not an `Ampicillin` vs `Amoxicillin` comparison.
+
 ---
 
 ## Architecture
