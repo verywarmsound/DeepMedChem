@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { postFingerprint } from "../api/client";
 import type { FingerprintResponse } from "../types/api";
 
@@ -41,24 +41,24 @@ export default function FingerprintView({ smiles }: FingerprintViewProps) {
   const [data, setData] = useState<FingerprintResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
+  const fetchFingerprint = useCallback(async (s: string, signal: AbortSignal) => {
+    setLoading(true);
+    try {
+      const result = await postFingerprint(s);
+      if (!signal.aborted) setData(result);
+    } catch {
+      if (!signal.aborted) setData(null);
+    } finally {
+      if (!signal.aborted) setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!smiles) return;
-    let cancelled = false;
-    setLoading(true);
-    postFingerprint(smiles)
-      .then((result) => {
-        if (!cancelled) setData(result);
-      })
-      .catch(() => {
-        if (!cancelled) setData(null);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [smiles]);
+    const ac = new AbortController();
+    fetchFingerprint(smiles, ac.signal);
+    return () => ac.abort();
+  }, [smiles, fetchFingerprint]);
 
   if (!smiles) return null;
 

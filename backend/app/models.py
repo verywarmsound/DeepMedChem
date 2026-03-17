@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field, field_validator
 from typing import Optional
+
+from pydantic import BaseModel, Field, field_validator
 
 
 class AlignRequest(BaseModel):
@@ -61,6 +62,16 @@ class PropertyPrediction(BaseModel):
 
 class PropertiesRequest(BaseModel):
     smiles_list: list[str] = Field(..., min_length=1, max_length=10)
+
+    @field_validator("smiles_list")
+    @classmethod
+    def validate_smiles_list(cls, v: list[str]) -> list[str]:
+        from rdkit import Chem
+
+        for smi in v:
+            if Chem.MolFromSmiles(smi) is None:
+                raise ValueError(f"Invalid SMILES string: {smi}")
+        return v
 
 
 class PropertiesResponse(BaseModel):

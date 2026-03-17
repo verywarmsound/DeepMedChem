@@ -5,14 +5,17 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    volumes:
+      - ./backend/app:/app/app
     environment:
-      - DMC_CORS_ORIGINS=["http://localhost:3000","http://localhost"]
+      - DMC_CORS_ORIGINS=["http://localhost:3000","http://localhost:5173","http://localhost"]
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
+  # Production frontend: builds static files and serves via nginx
   frontend:
     build:
       context: ./frontend
@@ -22,3 +25,26 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+    profiles:
+      - prod
+
+  # Development frontend: Vite dev server with hot-reload
+  frontend-dev:
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    command: sh -c "[ -d node_modules/.bin ] || npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    profiles:
+      - dev
+
+volumes:
+  frontend_node_modules:

@@ -22,15 +22,14 @@ export default function Header() {
           <h1 className="text-xl font-bold tracking-tight">Deep MedChem</h1>
         </div>
         <nav className="hidden md:flex items-center gap-8">
-          <a className="text-sm font-medium hover:text-primary transition-colors" href="#">
-            Docs
-          </a>
-          <a className="text-sm font-medium hover:text-primary transition-colors" href="#">
+          <a
+            className="text-sm font-medium hover:text-primary transition-colors"
+            href="https://github.com/verywarmsound/DeepMedChem"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
             GitHub
           </a>
-          <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
-            <span className="material-symbols-outlined text-primary text-sm">person</span>
-          </div>
         </nav>
       </div>
     </header>

@@ -28,10 +28,11 @@ Thumbs.db
 # DeepChem data cache
 /tmp/deepchem_data/
 
+# Playwright
+frontend/test-results/
+
 # Misc
 stitch/
-uv.lock
 HomeWork.txt
 test_main.http
 /main.py
-pyproject.toml

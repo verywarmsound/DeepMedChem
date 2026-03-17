@@ -74,30 +74,39 @@ async def predict_properties(request: PropertiesRequest):
 
     loop = asyncio.get_event_loop()
 
-    solubilities: list = [None] * len(request.smiles_list)
-    toxicities: list = [None] * len(request.smiles_list)
+    errors = []
 
     try:
         solubilities = await loop.run_in_executor(
             executor, predict_solubility, request.smiles_list
         )
-    except Exception as e:
+    except Exception:
         logger.error(f"Solubility prediction failed: {traceback.format_exc()}")
+        errors.append("solubility")
+        solubilities = None
 
     try:
         toxicities = await loop.run_in_executor(
             executor, predict_toxicity, request.smiles_list
         )
-    except Exception as e:
+    except Exception:
         logger.error(f"Toxicity prediction failed: {traceback.format_exc()}")
+        errors.append("toxicity")
+        toxicities = None
+
+    if solubilities is None and toxicities is None:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Property prediction models unavailable: {', '.join(errors)}",
+        )
 
     predictions = []
-    for smiles, sol, tox in zip(request.smiles_list, solubilities, toxicities):
+    for i, smiles in enumerate(request.smiles_list):
         predictions.append(
             {
                 "smiles": smiles,
-                "esol_log_solubility": sol,
-                "tox21_predictions": tox,
+                "esol_log_solubility": solubilities[i] if solubilities else None,
+                "tox21_predictions": toxicities[i] if toxicities else None,
             }
         )
     return PropertiesResponse(predictions=predictions)

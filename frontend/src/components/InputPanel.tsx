@@ -36,7 +36,7 @@ export default function InputPanel({ onSubmit, loading }: InputPanelProps) {
             onChange={(e) => setRefSmiles(e.target.value)}
           />
           <p className="text-[10px] text-slate-500 italic">
-            Commonly used: Ampicillin
+            Commonly used: Penicillin G (benzylpenicillin)
           </p>
         </div>
         <div className="space-y-2">

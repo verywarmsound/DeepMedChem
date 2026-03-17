@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import Header from "./components/Header";
 import HeroSection from "./components/HeroSection";
 import InputPanel from "./components/InputPanel";
@@ -23,10 +22,9 @@ function App() {
     runAlignment,
   } = useAlignment();
 
-  const propertiesSmiles = useMemo(
-    () => (data ? [data.reference_smiles, data.probe_smiles] : null),
-    [data?.reference_smiles, data?.probe_smiles],
-  );
+  const propertiesSmiles = data
+    ? [data.reference_smiles, data.probe_smiles]
+    : null;
 
   const handleSubmit = (refSmiles: string, probeSmiles: string) => {
     runAlignment({

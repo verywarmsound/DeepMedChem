@@ -8,6 +8,15 @@ declare namespace $3Dmol {
     },
   ): GLViewer;
 
+  interface Atom {
+    x: number;
+    y: number;
+    z: number;
+    elem: string;
+    serial: number;
+    [key: string]: unknown;
+  }
+
   interface GLViewer {
     addModel(data: string, format: string): GLModel;
     removeAllModels(): void;
@@ -24,6 +33,7 @@ declare namespace $3Dmol {
 
   interface GLModel {
     setStyle(sel: object, style: object): void;
+    selectedAtoms(sel: object): Atom[];
   }
 }
 

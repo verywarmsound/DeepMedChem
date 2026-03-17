@@ -1,4 +1,5 @@
 import copy
+
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdFMCS, rdShapeHelpers
 
@@ -88,11 +89,31 @@ def run_alignment(
         raise ValueError(f"Could not parse MCS SMARTS pattern: {mcs_smarts}")
 
     # Step 6: Get atom mappings
-    ref_match = ref_mol.GetSubstructMatch(mcs_pattern)
-    probe_match = probe_mol.GetSubstructMatch(mcs_pattern)
+    # MCS pattern was found on noH molecules, so match against noH first,
+    # then map indices back to the H-containing molecules for 3D alignment.
+    ref_noH_match = ref_noH.GetSubstructMatch(mcs_pattern)
+    probe_noH_match = probe_noH.GetSubstructMatch(mcs_pattern)
 
-    if not ref_match or not probe_match:
+    if not ref_noH_match or not probe_noH_match:
         raise ValueError("Could not map MCS atoms to molecules.")
+
+    # Build heavy-atom-index → H-mol-index mapping
+    # RDKit preserves heavy atom order: heavy atom i in noH mol corresponds
+    # to the i-th non-H atom in the H-containing mol.
+    def heavy_to_full_idx(mol_with_h):
+        """Return list where result[heavy_idx] = full_mol_idx."""
+        mapping = []
+        for atom in mol_with_h.GetAtoms():
+            if atom.GetAtomicNum() != 1:
+                mapping.append(atom.GetIdx())
+        return mapping
+
+    ref_h2f = heavy_to_full_idx(ref_mol)
+    probe_h2f = heavy_to_full_idx(probe_mol)
+
+    # Convert noH indices to full-mol indices
+    ref_match = tuple(ref_h2f[i] for i in ref_noH_match)
+    probe_match = tuple(probe_h2f[i] for i in probe_noH_match)
 
     atom_map = list(zip(probe_match, ref_match))
     num_mcs_atoms = len(atom_map)
@@ -145,8 +166,11 @@ def run_alignment(
             refCid=r["ref_conformer_id"],
             atomMap=atom_map,
         )
-        ref_molblock = Chem.MolToMolBlock(ref_mol, confId=r["ref_conformer_id"])
-        probe_molblock = Chem.MolToMolBlock(probe_copy, confId=r["probe_conformer_id"])
+        # Remove explicit hydrogens for cleaner 3D rendering
+        ref_noH_copy = Chem.RemoveHs(ref_mol)
+        probe_noH_copy = Chem.RemoveHs(probe_copy)
+        ref_molblock = Chem.MolToMolBlock(ref_noH_copy, confId=r["ref_conformer_id"])
+        probe_molblock = Chem.MolToMolBlock(probe_noH_copy, confId=r["probe_conformer_id"])
 
         shape_tani_dist = rdShapeHelpers.ShapeTanimotoDist(
             ref_mol, probe_copy,
