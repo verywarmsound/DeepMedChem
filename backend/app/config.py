@@ -6,8 +6,7 @@ class Settings(BaseSettings):
     default_num_conformers: int = 50
     max_conformers: int = 500
 
-    class Config:
-        env_prefix = "DMC_"
+    model_config = {"env_prefix": "DMC_"}
 
 
 settings = Settings()

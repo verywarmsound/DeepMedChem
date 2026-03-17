@@ -65,7 +65,7 @@ export default function Viewer3D({
     scriptLoaded.current = true;
 
     const script = document.createElement("script");
-    script.src = "https://3Dmol.org/build/3Dmol-min.js";
+    script.src = "/3Dmol-min.js";
     script.onload = () => initViewer();
     document.head.appendChild(script);
   }, [initViewer]);
